@@ -1,4 +1,4 @@
-//asdf
+//generic comment
 router-id 1
 input-ports 1024
 outputs 1025-10-2
