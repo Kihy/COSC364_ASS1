@@ -14,9 +14,11 @@ class Rip_packet:
         self.entry_table=[]
 
     def add_entry(self,entry):
+        """adds an entry to the entry table"""
         self.entry_table.append(entry)
 
     def dump(self):
+        """turns the packet it self into a bytearray for transfer"""
         #header
         packet=struct.pack(HEADER_FORMAT,self.command,self.version,self.router_id)
         #add entry_table
@@ -25,6 +27,7 @@ class Rip_packet:
         return packet
 
     def __str__(self):
+        """string representation of the packet"""
         string=LINE
         string+="|{:^7}|{:^7}|{:^15}|\n".format(self.command,self.version,self.router_id)
         string+=LINE
@@ -33,12 +36,15 @@ class Rip_packet:
             string+=LINE
         return string
 
-def load(packet):
-    num_entry=(len(packet)-4)//20
-    command,version,router_id=struct.unpack(HEADER_FORMAT,packet[0:4])
+def load(byte_stream):
+    """loads the packet bytestream into a packet object"""
+    num_entry=(len(byte_stream)-4)//20
+    start,end=0,4
+    command,version,router_id=struct.unpack(HEADER_FORMAT,byte_stream[start:end])
     rip=Rip_packet(router_id)
     for i in range(num_entry):
-        entry=struct.unpack(ENTRY_FORMAT,packet[4+i*20:4+(i+1)*20])
+        start,end=end,end+20
+        entry=struct.unpack(ENTRY_FORMAT,byte_stream[start:end])
         rip.add_entry(entry)
     return rip
 # # test packet load and dump functions
@@ -50,14 +56,17 @@ def load(packet):
 # print(p2)
 
 def check_id(router_id):
+    """check router id"""
     if router_id > 64000 or router_id<1:
         raise ValueError("Router ID out of bounds.")
 
 def check_port(port_num):
+    """check port number"""
     if port_num <1024 or port_num>64000:
         raise ValueError("port number out of bounds.")
 
 def read_config(filename):
+    """parse the config file """
     router_id=None
     input_ports=[]
     output_ports=[]
