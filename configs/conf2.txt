@@ -1,0 +1,4 @@
+//generic comment
+router-id 2
+input-ports 1025
+outputs 1024-10-1
