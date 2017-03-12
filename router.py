@@ -2,10 +2,11 @@ import socket
 import select
 import time
 import random
-
+import threading
 
 LOCALHOST="127.0.0.1"
-PERIODIC_TIMER=25
+MINIMUM_TIME=25
+TIMER_RANGE=10
 
 #class Entry(object):
     #def __init__(self, dest, metric, ):
@@ -25,18 +26,14 @@ class Router(object):
     def add_routing_table(self, port,metric,router_id):
         self.routing_table.append([port,metric,router_id])
 
+    def periodic_update(self):
+        wait_time=MINIMUM_TIME+random.uniform(0,TIMER_RANGE)
+        self.send(12)
+        threading.Timer(wait_time, self.periodic_update).start()
 
     def start(self):
-        t = time.time()
-        print(t)
+        self.periodic_update()
         while True:
-            if (time.time() - t) >= PERIODIC_TIMER:
-                print(time.time()-t)
-                t2=PERIODIC_TIMER + random.uniform(0, 10)
-                print("13  "+str(t2))
-                t += t2
-                self.send(12)
-                #self.print_table()
             inputready, outputready,exceptrdy = select.select(self.input_sockets, [],[],0.5)
             for s in inputready:
                 data,addr=s.recvfrom(1024)
