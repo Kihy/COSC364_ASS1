@@ -5,7 +5,10 @@ import random
 
 
 LOCALHOST="127.0.0.1"
-PERIODIC_TIMER=30
+PERIODIC_TIMER=25
+
+#class Entry(object):
+    #def __init__(self, dest, metric, ):
 
 class Router(object):
     """docstring for Router."""
@@ -29,9 +32,11 @@ class Router(object):
         while True:
             if (time.time() - t) >= PERIODIC_TIMER:
                 print(time.time()-t)
-                t += PERIODIC_TIMER + random.uniform(0, 5)
+                t2=PERIODIC_TIMER + random.uniform(0, 10)
+                print("13  "+str(t2))
+                t += t2
                 self.send(12)
-                #self.print_table
+                #self.print_table()
             inputready, outputready,exceptrdy = select.select(self.input_sockets, [],[],0.5)
             for s in inputready:
                 data,addr=s.recvfrom(1024)
