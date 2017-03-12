@@ -1,7 +1,11 @@
 import socket
 import select
+import time
+import random
+
 
 LOCALHOST="127.0.0.1"
+PERIODIC_TIMER=30
 
 class Router(object):
     """docstring for Router."""
@@ -20,8 +24,14 @@ class Router(object):
 
 
     def start(self):
+        t = time.time()
+        print(t)
         while True:
-            self.send(12)
+            if (time.time() - t) >= PERIODIC_TIMER:
+                print(time.time()-t)
+                t += PERIODIC_TIMER + random.uniform(0, 5)
+                self.send(12)
+                #self.print_table
             inputready, outputready,exceptrdy = select.select(self.input_sockets, [],[],0.5)
             for s in inputready:
                 data,addr=s.recvfrom(1024)
