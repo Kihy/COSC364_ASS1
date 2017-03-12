@@ -2,17 +2,17 @@ import socket
 import select
 import time
 import random
-
+from util import *
 
 LOCALHOST="127.0.0.1"
 PERIODIC_TIMER=25
 
-#class Entry(object):
-    #def __init__(self, dest, metric, ):
+
 
 class Router(object):
     """docstring for Router."""
     def __init__(self, router_id):
+        self.timer=time.time()
         self.router_id=router_id
         self.routing_table=[]
         self.input_sockets=[]
@@ -25,12 +25,15 @@ class Router(object):
     def add_routing_table(self, port,metric,router_id):
         self.routing_table.append([port,metric,router_id])
 
+    def print_table(self):
+        for entries in self.routing_table
 
     def start(self):
         t = time.time()
         print(t)
+        t2=PERIODIC_TIMER
         while True:
-            if (time.time() - t) >= PERIODIC_TIMER:
+            if (time.time() - t) >= t2:
                 print(time.time()-t)
                 t2=PERIODIC_TIMER + random.uniform(0, 10)
                 print("13  "+str(t2))

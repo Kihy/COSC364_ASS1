@@ -1,6 +1,7 @@
 import sys
 import struct
 
+
 HEADER_FORMAT="BBH"
 ENTRY_FORMAT="HHIIII"
 LINE="-"*33+"\n"
@@ -18,7 +19,8 @@ class Rip_packet:
         self.entry_table.append(entry)
 
     def dump(self):
-        """turns the packet it self into a bytearray for transfer"""
+        """turns the packet it self into a bytearclass Entry(object):
+    #def __init__(self, dest, metric, ):ray for transfer"""
         #header
         packet=struct.pack(HEADER_FORMAT,self.command,self.version,self.router_id)
         #add entry_table
