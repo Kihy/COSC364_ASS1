@@ -25,8 +25,7 @@ class Router(object):
     def add_routing_table(self, port,metric,router_id):
         self.routing_table.append([port,metric,router_id])
 
-    def print_table(self):
-        for entries in self.routing_table
+
 
     def start(self):
         t = time.time()
