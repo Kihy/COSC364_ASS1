@@ -77,7 +77,8 @@ class Router(object):
             self.routing_table[key][2] += 1
             if self.routing_table[key][2] == 180:
                 self.routing_table[key][0] = INFINITY
-                self.routing_table[key][2]=0
+                print("set to infinitiy")
+                self.routing_table[key][2] = 0
                 self.send()  # notify neighbours about the change
             if self.routing_table[key][2] == 120 and self.routing_table[key][0] == INFINITY:
                 self.routing_table.pop(key)
@@ -96,22 +97,19 @@ class Router(object):
             for s in inputready:
                 data, addr = s.recvfrom(1024)
                 rip_packet = load(data)
-
-                # validation check
-                if rip_packet.router_id == self.router_id:          #check whether the response is from one of the router's own addresses
+                if rip_packet.router_id not in self.portDict.values():  # If not a directly connected network
                     break
-
-                elif rip_packet.router_id not in self.portDict.values():  #If not a directly connected network
-                    break
-
                 print("packet loaded")
                 print(rip_packet)
-                # print("Packet Received")
+
                 for entry in rip_packet.entry_table:
                     # print("Entry: " + str(entry))
-                    _, _, dest, _, next_hop, entry_metric = entry
+                    command,version, dest, _, next_hop, entry_metric = entry
 
-                    if dest==self.router_id:
+                    if command == 2 and version == 2 and 1 <= entry_metric <= INFINITY:
+                        continue
+
+                    if dest == self.router_id:
                         continue
                     # print("Next_hop is: " + str(next_hop))
                     # print("metric is:" + str(entry_metric))
@@ -126,11 +124,11 @@ class Router(object):
                         if self.routing_table[dest][1] == rip_packet.router_id:
 
 
-                            if potential_metric!=self.routing_table[dest][0]:
+                            if potential_metric != self.routing_table[dest][0]:
 
                                 if potential_metric == INFINITY:
                                     self.routing_table[dest][0] = potential_metric
-                                    self.routing_table[dest][1]=rip_packet.router_id
+                                    self.routing_table[dest][1]= rip_packet.router_id
 
                         if potential_metric < self.routing_table[dest][0]:
                             self.routing_table[dest] = [potential_metric, rip_packet.router_id, 0]
