@@ -52,6 +52,8 @@ class Router(object):
         # call dump in packet
         rip_packet = Rip_packet(self.router_id)
 
+        #add information about it self
+        rip_packet.add_entry([0,0,self.router_id,0,self.router_id,0])
 
         for dest_id in self.routing_table.keys():
             metric, next_hop, timeout = self.routing_table[dest_id]
@@ -113,15 +115,14 @@ class Router(object):
                 elif rip_packet.router_id not in self.portDict.values():  # If not a directly connected network
                     break
 
-                # print("Packet Received")
-                # print(rip_packet)
+                print("Packet Received")
+                print(rip_packet)
                 for entry in rip_packet.entry_table:
                     # print("Entry: " + str(entry))
                     _, _, dest, _, next_hop, entry_metric = entry
 
                     # if entry is about it self and not inifinity, clear timeout for that router
-                    if dest == self.router_id and entry_metric!=INFINITY:
-                        self.routing_table[rip_packet.router_id][2] = 0
+                    if dest == self.router_id:
                         continue
 
                     # cost from the current router to a potential dest router
