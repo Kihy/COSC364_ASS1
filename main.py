@@ -11,7 +11,7 @@ def main():
             router.add_input_socket(p)
         for p in output_ports:
             router.add_port_dict(p[0],p[2])
-            router.add_routing_table(p[1],p[2],router_id)
+            router.add_routing_table(p[1],p[2],p[2])
             router.add_output_port(p[0])
         router.startRouter()
 main()
