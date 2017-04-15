@@ -84,10 +84,6 @@ class Router(object):
             self.routing_table[key][2] += 1
             if self.routing_table[key][2] == 180:
                 self.routing_table[key][0] = INFINITY
-<<<<<<< HEAD
-                print("set to infinitiy")
-=======
->>>>>>> 34317422afd41ca3b17c9e9083961fdb60904369
                 self.routing_table[key][2] = 0
                 self.send()  # notify neighbours about the change
             elif self.routing_table[key][2] == 120 and self.routing_table[key][0] == INFINITY:
@@ -109,26 +105,12 @@ class Router(object):
             for s in inputready:
                 data, addr = s.recvfrom(1024)
                 rip_packet = load(data)
-<<<<<<< HEAD
+
                 if rip_packet.router_id not in self.portDict.values():  # If not a directly connected network
                     break
                 print("packet loaded")
                 print(rip_packet)
 
-=======
-
-                # validation check
-                # check whether the response is from one of the router's own
-                # addresses
-                if rip_packet.router_id == self.router_id:
-                    break
-
-                elif rip_packet.router_id not in self.portDict.values():  # If not a directly connected network
-                    break
-
-                print("Packet Received")
-                print(rip_packet)
->>>>>>> 34317422afd41ca3b17c9e9083961fdb60904369
                 for entry in rip_packet.entry_table:
                     # print("Entry: " + str(entry))
                     command,version, dest, _, next_hop, entry_metric = entry
@@ -136,10 +118,7 @@ class Router(object):
                     if command == 2 and version == 2 and 1 <= entry_metric <= INFINITY:
                         continue
 
-<<<<<<< HEAD
-=======
                     # if entry is about it self and not inifinity, clear timeout for that router
->>>>>>> 34317422afd41ca3b17c9e9083961fdb60904369
                     if dest == self.router_id:
                         continue
 
@@ -156,19 +135,6 @@ class Router(object):
                         # if next hop comes from the current neighbour
                         if self.routing_table[dest][1] == rip_packet.router_id:
 
-<<<<<<< HEAD
-
-                            if potential_metric != self.routing_table[dest][0]:
-
-                                if potential_metric == INFINITY:
-                                    self.routing_table[dest][0] = potential_metric
-                                    self.routing_table[dest][1]= rip_packet.router_id
-
-                        if potential_metric < self.routing_table[dest][0]:
-                            self.routing_table[dest] = [potential_metric, rip_packet.router_id, 0]
-
-
-=======
                             # update if values are different
                             if potential_metric != self.routing_table[dest][0]:
                                 self.routing_table[dest][0] = potential_metric
@@ -187,7 +153,6 @@ class Router(object):
                         elif potential_metric < self.routing_table[dest][0]:
                             self.routing_table[dest] = [
                                 potential_metric, rip_packet.router_id, 0]
->>>>>>> 34317422afd41ca3b17c9e9083961fdb60904369
 
     def print_routing_table(self):
         print("Routing table")
