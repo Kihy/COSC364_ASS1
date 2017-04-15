@@ -1,0 +1,3 @@
+router-id 3
+input-ports 10032,10035
+outputs 10023-2-2,10053-3-5
