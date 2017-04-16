@@ -22,7 +22,8 @@ class Rip_packet:
     def dump(self):
         """turns the packet it self into a bytearclass Entry(object)for transfer"""
         # header
-        packet = struct.pack(HEADER_FORMAT, self.command, self.version, self.router_id)
+        packet = struct.pack(HEADER_FORMAT, self.command,
+                             self.version, self.router_id)
         # add entry_table
         for row in self.entry_table:
             packet += struct.pack(ENTRY_FORMAT, *row)
@@ -31,11 +32,13 @@ class Rip_packet:
     def __str__(self):
         """string representation of the packet"""
         string = LINE
-        string += "|{:^7}|{:^7}|{:^15}|\n".format(self.command, self.version, self.router_id)
+        string += "|{:^7}|{:^7}|{:^15}|\n".format(
+            self.command, self.version, self.router_id)
         string += LINE
         for entry in self.entry_table:
 
-            string += "|{:^15}|{:^15}|\n|{:^31}|\n|{:^31}|\n|{:^31}|\n|{:^31}|\n".format(*entry)
+            string += "|{:^15}|{:^15}|\n|{:^31}|\n|{:^31}|\n|{:^31}|\n|{:^31}|\n".format(
+                *entry)
             string += LINE
         return string
 
@@ -47,7 +50,8 @@ def load(byte_stream):
     """loads the packet bytestream into a packet object"""
     num_entry = (len(byte_stream) - 4) // 20
     start, end = 0, 4
-    command, version, router_id = struct.unpack(HEADER_FORMAT, byte_stream[start:end])
+    command, version, router_id = struct.unpack(
+        HEADER_FORMAT, byte_stream[start:end])
     rip = Rip_packet(router_id)
     for i in range(num_entry):
         start, end = end, end + 20
