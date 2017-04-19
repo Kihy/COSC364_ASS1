@@ -1,3 +1,3 @@
 router-id 4
-input-ports 10041,10045
-outputs 10014-4-1,10054-2-5
+input-ports 6643,6645
+outputs 6634-10-3,6654-1-5

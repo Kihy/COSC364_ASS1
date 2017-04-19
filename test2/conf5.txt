@@ -1,3 +1,3 @@
 router-id 5
-input-ports 10054,10053
-outputs 10045-2-4,10035-3-3
+input-ports 6652,6654
+outputs 6625-1-2,6645-1-4

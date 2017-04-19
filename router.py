@@ -7,9 +7,11 @@ import random
 import threading
 
 LOCALHOST = "127.0.0.1"
-MINIMUM_TIME = 25
+MINIMUM_TIME = 0
 TIMER_RANGE = 10
 INFINITY = 16
+TIMEOUT=60
+GARBAGE=30
 
 
 class Router(object):
@@ -23,6 +25,7 @@ class Router(object):
         self.output_port = []
         self.portDict = {}
         self.lock = threading.Lock()
+        self.original_routing_table={}
 
     def add_port_dict(self, port, router_id):
         """add a mapping from output port number to router id"""
@@ -44,6 +47,12 @@ class Router(object):
         metric = min(INFINITY, metric)
         self.routing_table[dest_id] = [metric, next_hop, timeout, firsttime]
 
+    def add_original_routing_table(self, metric, dest_id, next_hop):
+        """add an entry to routing table, firsttime is a flag used for setting
+        route's timeout value"""
+        metric = min(INFINITY, metric)
+        self.original_routing_table[dest_id] = [metric, next_hop]
+
     def generate_packet(self, output_port):
         """generate a RIP packet from routing table, poisons the router to
         output_port"""
@@ -52,8 +61,6 @@ class Router(object):
         # call dump in packet
         rip_packet = Rip_packet(self.router_id)
 
-        # add information about it self
-        rip_packet.add_entry([0, 0, self.router_id, 0, self.router_id, 0])
 
         for dest_id in self.routing_table.keys():
             try:
@@ -90,21 +97,28 @@ class Router(object):
         """increments the timeout field of each entry by 1 every second
         also checks for timeout and garbage collection"""
         self.lock.acquire()
-        for dest in self.routing_table.keys():
+        for dest in self.routing_table.copy().keys():
             # increment timeout by 1
             self.routing_table[dest][2] += 1
-            if self.routing_table[dest][2] == 180:
+            if self.routing_table[dest][2] == TIMEOUT:
                 self.set_infinity(dest)
-            elif self.routing_table[dest][2] == 120 and self.routing_table[dest][0] == INFINITY:
+            elif self.routing_table[dest][2] == GARBAGE and self.routing_table[dest][0] == INFINITY:
                 self.remove_entry(dest)
         self.lock.release()
         threading.Timer(1, self.update_Timer).start()
 
     def set_infinity(self, dest):
-        """sets dest in routing table's value to inifinity"""
-        self.routing_table[dest][0] = INFINITY
-        self.routing_table[dest][2] = 0
-        self.send()  # notify neighbours about the change
+        """sets dest in routing table's value to infinity"""
+        if self.original_routing_table[dest][0] != INFINITY and self.routing_table[dest][1] != dest:
+            self.routing_table[dest][0] = self.original_routing_table[dest][0]
+            self.routing_table[dest][1] = self.original_routing_table[dest][1]
+            self.routing_table[dest][2] = 0
+            self.routing_table[dest][3] = True
+        else:
+            self.routing_table[dest][0] = INFINITY
+            self.routing_table[dest][2] = 0
+            self.routing_table[dest][3] = False
+            self.send()  # notify neighbours about the change
 
     def remove_entry(self, dest):
         """removes the entry with dest due to garbage collection"""
@@ -132,16 +146,18 @@ class Router(object):
                             rip_packet.version)
 
         # print("packet loaded")
-        # print(rip_packet)
+        print(rip_packet)
 
         # return the entry table
         return rip_packet.router_id, rip_packet.entry_table
+
 
     def updat_routing_table(self, dest, potential_metric, router_id):
         # if not in routing table
         if dest not in self.routing_table.keys():
             if potential_metric!= INFINITY:
                 self.add_routing_table(potential_metric, dest, router_id)
+                self.send()
         else:
             # if next hop comes from the current neighbour
             if self.routing_table[dest][1] == router_id:
@@ -153,12 +169,25 @@ class Router(object):
 
                     # if it is not infinity reintialize timer and set
                     # firsttime flag to true
+
                     if potential_metric != INFINITY:
                         #  reinitialize timer
                         self.routing_table[dest][2] = 0
                         self.routing_table[dest][3] = True
                     # if new metric is infinity trigger an update
                     else:
+
+                        # # if the current next hop is dead, consult the original routing table
+                        # if dest in self.original_routing_table.keys():
+                        #     #if metric is not infinity and destination is not directly connected
+                        #     if self.original_routing_table[dest][0]!= INFINITY and self.routing_table[dest][1]!= dest:
+                        #         self.routing_table[dest][0] = self.original_routing_table[dest][0]
+                        #         self.routing_table[dest][1] = self.original_routing_table[dest][1]
+                        #         self.routing_table[dest][2] = 0
+                        #         self.routing_table[dest][3] = True
+                        #
+                        # else:
+                            #self.send()
                         # if it is the first time the entry being infinity
                         if self.routing_table[dest][3]:
                             self.send()
@@ -170,8 +199,9 @@ class Router(object):
 
             elif potential_metric < self.routing_table[dest][0]:
                 self.routing_table[dest][0] = potential_metric
-                self.routing_table[dest][1] =  router_id
-                self.routing_table[dest][2] =   0
+                self.routing_table[dest][1] = router_id
+                self.routing_table[dest][2] = 0
+
 
     def startRouter(self):
         """start the router"""
@@ -180,15 +210,17 @@ class Router(object):
         self.disp()
 
         while True:
+            self.lock.acquire()
             inputready, outputready, exceptrdy = select.select(
                 self.input_sockets, [], [], 1)
             for s in inputready:
-                self.lock.acquire()
+
 
                 try:
                     router_id, entry_table = self.receive_data(s)
+
                 except Exception as e:
-                    print(e.message)
+                    print(e.args)
                     continue
 
                 for entry in entry_table:
@@ -196,21 +228,29 @@ class Router(object):
                     # some entries are irrelevant for now
                     _, _, dest, _, next_hop, entry_metric = entry
 
-                    if entry_metric > INFINITY or entry_metric < 0:
+                    if entry_metric > INFINITY or entry_metric < 1:
                         print("Incorrect metric received: ", entry_metric)
                         continue
 
-                    # skip if entry is about it self
+                    # # skip if entry is about it self
                     if dest == self.router_id:
+                        if self.routing_table[router_id][1]==router_id: #only reset timer when routers are directly connected.
+                            self.routing_table[router_id][2] = 0
                         continue
 
                     # cost from the current router to a potential dest router
                     # through next_hop
+                    # print("rip_packet.router_id is",router_id)
+                    #if dest not in self.routing_table.keys():
+                        #potential_metric=min(entry_metric, INFINITY)
+                    #else:
                     potential_metric = entry_metric + self.routing_table[router_id][0]
+                        # print("first_potential metric is",potential_metric,"entry metric is",entry_metric)
                     potential_metric = min(potential_metric, INFINITY)
+                        # print("potential is", potential_metric)
 
                     self.updat_routing_table(dest, potential_metric, router_id)
-                self.lock.release()
+            self.lock.release()
 
     def print_routing_table(self):
         """prints the current routing table"""
