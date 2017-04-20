@@ -10,8 +10,8 @@ LOCALHOST = "127.0.0.1"
 MINIMUM_TIME = 0
 TIMER_RANGE = 10
 INFINITY = 16
-TIMEOUT=60
-GARBAGE=30
+TIMEOUT = 60
+GARBAGE = 30
 
 
 class Router(object):
@@ -25,7 +25,7 @@ class Router(object):
         self.output_port = []
         self.portDict = {}
         self.lock = threading.Lock()
-        self.original_routing_table={}
+        self.original_routing_table = {}
 
     def add_port_dict(self, port, router_id):
         """add a mapping from output port number to router id"""
@@ -60,7 +60,6 @@ class Router(object):
         # add each entry in routing table to packet
         # call dump in packet
         rip_packet = Rip_packet(self.router_id)
-
 
         for dest_id in self.routing_table.keys():
             try:
@@ -109,11 +108,11 @@ class Router(object):
 
     def set_infinity(self, dest):
         """sets dest in routing table's value to infinity"""
-        if self.original_routing_table[dest][0] != INFINITY and self.routing_table[dest][1] != dest:
-            self.routing_table[dest][0] = self.original_routing_table[dest][0]
-            self.routing_table[dest][1] = self.original_routing_table[dest][1]
-            self.routing_table[dest][2] = 0
-            self.routing_table[dest][3] = True
+        if dest in self.original_routing_table.keys() and self.original_routing_table[dest][0] != INFINITY and self.routing_table[dest][1] != dest:
+                self.routing_table[dest][0] = self.original_routing_table[dest][0]
+                self.routing_table[dest][1] = self.original_routing_table[dest][1]
+                self.routing_table[dest][2] = 0
+                self.routing_table[dest][3] = True
         else:
             self.routing_table[dest][0] = INFINITY
             self.routing_table[dest][2] = 0
@@ -155,7 +154,7 @@ class Router(object):
     def updat_routing_table(self, dest, potential_metric, router_id):
         # if not in routing table
         if dest not in self.routing_table.keys():
-            if potential_metric!= INFINITY:
+            if potential_metric != INFINITY:
                 self.add_routing_table(potential_metric, dest, router_id)
                 self.send()
         else:
@@ -177,7 +176,7 @@ class Router(object):
                     # if new metric is infinity trigger an update
                     else:
 
-                        # # if the current next hop is dead, consult the original routing table
+                        # if the current next hop is dead, consult the original routing table
                         # if dest in self.original_routing_table.keys():
                         #     #if metric is not infinity and destination is not directly connected
                         #     if self.original_routing_table[dest][0]!= INFINITY and self.routing_table[dest][1]!= dest:
@@ -187,9 +186,9 @@ class Router(object):
                         #         self.routing_table[dest][3] = True
                         #
                         # else:
-                            #self.send()
+                        # self.send()
                         # if it is the first time the entry being infinity
-                        if self.routing_table[dest][3]:
+                       if self.routing_table[dest][3]:
                             self.send()
                             self.routing_table[dest][3] = False
                             self.routing_table[dest][2] = 0
@@ -202,7 +201,6 @@ class Router(object):
                 self.routing_table[dest][1] = router_id
                 self.routing_table[dest][2] = 0
 
-
     def startRouter(self):
         """start the router"""
         self.periodic_update()
@@ -210,12 +208,11 @@ class Router(object):
         self.disp()
 
         while True:
-            self.lock.acquire()
+
             inputready, outputready, exceptrdy = select.select(
                 self.input_sockets, [], [], 1)
             for s in inputready:
-
-
+                self.lock.acquire()
                 try:
                     router_id, entry_table = self.receive_data(s)
 
@@ -233,30 +230,43 @@ class Router(object):
                         continue
 
                     # # skip if entry is about it self
+
                     if dest == self.router_id:
-                        if self.routing_table[router_id][1]==router_id: #only reset timer when routers are directly connected.
-                            self.routing_table[router_id][2] = 0
+                        # only reset timer when routers are directly connected.
+                        if router_id in self.routing_table.keys():
+                            if self.routing_table[router_id][1] == router_id:
+                                self.routing_table[router_id][2] = 0
+                        else:
+                            if router_id in self.original_routing_table.keys():
+                                metric=self.original_routing_table[router_id][0]
+                                # next_hop=self.original_routing_table[router_id][1]
+                                self.add_routing_table(metric,router_id,router_id)
                         continue
 
-                    # cost from the current router to a potential dest router
-                    # through next_hop
-                    # print("rip_packet.router_id is",router_id)
-                    #if dest not in self.routing_table.keys():
-                        #potential_metric=min(entry_metric, INFINITY)
-                    #else:
-                    potential_metric = entry_metric + self.routing_table[router_id][0]
+
+                        # cost from the current router to a potential dest router
+                        # through next_hop
+                        # print("rip_packet.router_id is",router_id)
+                        # if dest not in self.routing_table.keys():
+                        # potential_metric=min(entry_metric, INFINITY)
+                    # else:
+
+                    try:
+                        potential_metric = entry_metric + self.routing_table[router_id][0]
                         # print("first_potential metric is",potential_metric,"entry metric is",entry_metric)
-                    potential_metric = min(potential_metric, INFINITY)
-                        # print("potential is", potential_metric)
+                        potential_metric = min(potential_metric, INFINITY)
+                    # print("potential is", potential_metric)
+                    except KeyError as e:
+                        continue
 
                     self.updat_routing_table(dest, potential_metric, router_id)
-            self.lock.release()
+                self.lock.release()
 
     def print_routing_table(self):
         """prints the current routing table"""
-        print("Routing table for ",self.router_id)
+        print("Routing table for ", self.router_id)
         print("|{:^7}|{:^7}|{:^15}|{:^15}|{:^15}|".format(
-            "dest id", "metric", "next hop id", "timeout","firsttime"))
+            "dest id", "metric", "next hop id", "timeout", "firsttime"))
         for key in self.routing_table.keys():
             row = self.routing_table[key]
             print("|{:^7}|{:^7}|{:^15}|{:^15}|{:^15}|".format(key, *row))
