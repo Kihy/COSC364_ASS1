@@ -15,7 +15,7 @@ GARBAGE = 30
 
 
 class Router(object):
-    """docstring for Router."""
+    """Router class"""
 
     def __init__(self, router_id):
         """initializes the router """
@@ -108,11 +108,12 @@ class Router(object):
 
     def set_infinity(self, dest):
         """sets dest in routing table's value to infinity"""
-        if dest in self.original_routing_table.keys() and self.original_routing_table[dest][0] != INFINITY and self.routing_table[dest][1] != dest:
-                self.routing_table[dest][0] = self.original_routing_table[dest][0]
-                self.routing_table[dest][1] = self.original_routing_table[dest][1]
-                self.routing_table[dest][2] = 0
-                self.routing_table[dest][3] = True
+        if dest in self.original_routing_table.keys() and self.original_routing_table[dest][0] != INFINITY and \
+                        self.routing_table[dest][1] != dest:
+            self.routing_table[dest][0] = self.original_routing_table[dest][0]
+            self.routing_table[dest][1] = self.original_routing_table[dest][1]
+            self.routing_table[dest][2] = 0
+            self.routing_table[dest][3] = True
         else:
             self.routing_table[dest][0] = INFINITY
             self.routing_table[dest][2] = 0
@@ -150,8 +151,9 @@ class Router(object):
         # return the entry table
         return rip_packet.router_id, rip_packet.entry_table
 
-
     def updat_routing_table(self, dest, potential_metric, router_id):
+        """Updates the routing table given destionation, the new metric and the
+        router id of incoming rip packet"""
         # if not in routing table
         if dest not in self.routing_table.keys():
             if potential_metric != INFINITY:
@@ -188,7 +190,7 @@ class Router(object):
                         # else:
                         # self.send()
                         # if it is the first time the entry being infinity
-                       if self.routing_table[dest][3]:
+                        if self.routing_table[dest][3]:
                             self.send()
                             self.routing_table[dest][3] = False
                             self.routing_table[dest][2] = 0
@@ -202,7 +204,7 @@ class Router(object):
                 self.routing_table[dest][2] = 0
 
     def startRouter(self):
-        """start the router"""
+        """start the router, main process of the router"""
         self.periodic_update()
         self.update_Timer()
         self.disp()
@@ -238,9 +240,9 @@ class Router(object):
                                 self.routing_table[router_id][2] = 0
                         else:
                             if router_id in self.original_routing_table.keys():
-                                metric=self.original_routing_table[router_id][0]
+                                metric = self.original_routing_table[router_id][0]
                                 # next_hop=self.original_routing_table[router_id][1]
-                                self.add_routing_table(metric,router_id,router_id)
+                                self.add_routing_table(metric, router_id, router_id)
                         continue
 
 
@@ -263,7 +265,7 @@ class Router(object):
                 self.lock.release()
 
     def print_routing_table(self):
-        """prints the current routing table"""
+        """prints the current routing table in a nice format"""
         print("Routing table for ", self.router_id)
         print("|{:^7}|{:^7}|{:^15}|{:^15}|{:^15}|".format(
             "dest id", "metric", "next hop id", "timeout", "firsttime"))

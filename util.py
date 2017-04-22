@@ -7,7 +7,7 @@ LINE = "-" * 33 + "\n"
 
 
 class Rip_packet:
-    """a rip v2 packet"""
+    """a rip v2 packet, this class handles turning itself into a byte array"""
 
     def __init__(self, router_id):
         self.command = 2
@@ -36,14 +36,13 @@ class Rip_packet:
             self.command, self.version, self.router_id)
         string += LINE
         for entry in self.entry_table:
-
             string += "|{:^15}|{:^15}|\n|{:^31}|\n|{:^31}|\n|{:^31}|\n|{:^31}|\n".format(
                 *entry)
             string += LINE
         return string
 
-    # def __repr__(self):
-    #     return self.__str__()
+        # def __repr__(self):
+        #     return self.__str__()
 
 
 def load(byte_stream):
@@ -93,14 +92,19 @@ def read_config(filename):
         try:
             if line.startswith("router-id"):
                 router_id = int(line.split()[1])
+                check_id(router_id)
 
             if line.startswith("input-ports"):
                 input_ports = list(map(int, line.split()[1].split(",")))
-
+                for port in input_ports:
+                    check_port(port)
             if line.startswith("outputs"):
                 output_port = line.split()[1].split(",")
                 for port in output_port:
-                    output_ports.append(list(map(int, port.split("-"))))
+                    output_port_list = list(map(int, port.split("-")))
+                    check_port(output_port_list[0])
+                    check_id(output_port_list[2])
+                    output_ports.append(output_port_list)
         except ValueError as e:
             print(e.args[0])
             sys.exit()
